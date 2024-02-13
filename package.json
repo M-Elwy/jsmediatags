@@ -1,18 +1,12 @@
 {
-  "name": "@bhunter179/jsmediatags",
-  "version": "3.9.8",
+  "name": "@m-elwy/jsmediatags",
+  "version": "3.9.9",
   "description": "Media Tags Reader (ID3, MP4)",
   "author": {
     "name": "Bhunter"
   },
   "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/jsmediatags.esm.js"
-    }
-  },
-  "type": "module",
+  "main": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/divyam234/jsmediatags.git"
@@ -37,7 +31,7 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "build": "dts build --format esm --transpileOnly",
+    "build": "dts build --format cjs --transpileOnly",
     "patch": "npm --no-git-tag-version version patch",
     "release": "npm publish --access=public"
   },

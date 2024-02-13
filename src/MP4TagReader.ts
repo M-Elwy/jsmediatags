@@ -113,7 +113,8 @@ class MP4TagReader extends MediaTagReader {
   }
 
   _canReadAtom(atomName: string): boolean {
-    return atomName !== "----";
+    //return atomName !== "----";
+    return true
   }
 
   _parseData(data: MediaFileReader, tagsToRead: Array<string>): TagType {
@@ -177,7 +178,16 @@ class MP4TagReader extends MediaTagReader {
         parentAtomFullName === "moov.udta.meta.ilst" &&
         this._canReadAtom(atomName)
       ) {
-        tags[atomName] = this._readMetadataAtom(data, seek);
+        if(atomName === '----')
+          {
+            let atomData = this._readMeanMetadataAtom(data, seek);
+            tags[atomData.id] = atomData;
+          }
+          else
+          {
+            tags[atomName] = this._readMetadataAtom(data, seek);
+          }
+        
       }
 
       seek += atomSize;
@@ -266,6 +276,71 @@ class MP4TagReader extends MediaTagReader {
       description: ATOM_DESCRIPTIONS[atomName] || "Unknown",
       data: atomData
     };
+  }
+
+  _readMeanMetadataAtom(data: MediaFileReader, offset: number): TagFrame {
+    // 16: size + name + size + "data" (4 bytes each)
+    // 8: 1 byte atom version & 3 bytes atom flags + 4 bytes NULL space
+    // 8: 4 bytes track + 4 bytes total
+    var METADATA_HEADER = 16;
+    var atomSize = data.getLongAt(offset, true);
+    var atomName = data.getStringAt(offset + 4, 4);
+    let description = '';
+    var klass = data.getInteger24At(offset + METADATA_HEADER + 1, true);
+    var type = TYPES[klass];
+    var atomData;
+    var bigEndian = true;
+
+    if(atomName == "----")
+    {
+      let parentAtomName = atomName;
+      let atomOffset = offset + 8;
+      atomSize = data.getLongAt(atomOffset, true);
+      atomName = data.getStringAt(atomOffset + 4, 4);
+      parentAtomName += '/' + atomName;
+
+      if(atomName === "mean")
+      {
+        atomOffset += 8;
+        atomName = data.getStringAt(atomOffset + 4, atomSize - 12); // com.apple.iTunes | com.serato.dj
+        //console.log('atomSize', atomSize);
+        //console.log('atomName', atomName);
+        parentAtomName += '/' + atomName;
+
+        atomOffset = offset + atomSize + 8;
+        atomSize = data.getLongAt(atomOffset, true);
+        atomName = data.getStringAt(atomOffset + 4, 4); // 'name'
+        //console.log('atomSize', atomSize);
+        //console.log('atomName', atomName);
+
+        if(atomName === "name")
+        {
+          //atomOffset += 8;
+          atomName = data.getStringAt(atomOffset + 12, atomSize - 12); // 'markersv2'
+          parentAtomName += '/' + atomName;
+          description = atomName;
+          //console.log('atomSize', atomSize);
+          //console.log('atomName', atomName);
+
+          atomOffset += atomSize;
+          atomSize = data.getLongAt(atomOffset, true);
+          atomName = data.getStringAt(atomOffset + 4, 4); // 'data'
+          //console.log('atomSize', atomSize);
+          //console.log('atomName', atomName);
+          
+          var dataStart = atomOffset + METADATA_HEADER;
+          var dataLength = atomSize - METADATA_HEADER;
+          //console.log('atomOffset', atomOffset, 'atomSize', atomSize, 'dataStart', dataStart, 'dataLength', dataLength);
+          atomData = data.getStringWithCharsetAt(dataStart, dataLength, "utf-8").toString();
+          return {
+            id: parentAtomName,
+            size: atomSize,
+            description: description,
+            data: atomData
+          };
+        }
+      }
+    }
   }
 
   getShortcuts(): {[key: string]: string|Array<string>} {

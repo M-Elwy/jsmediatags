@@ -1,29 +1,22 @@
 {
-  "include": [
-    "src"
-  ],
   "compilerOptions": {
-    "module": "esnext",
-    "lib": [
-      "esnext",
-      "dom"
-    ],
-    "target": "esnext",
-    "noEmit": true,
-    "importHelpers": true,
-    "outDir": "dist",
-    "removeComments": true,
-    "declaration": true,
-    "rootDir": "src",
-    "strict": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": true,
-    "moduleResolution": "node",
-    "noImplicitAny": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-  }
+      "module": "ES2020",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "target": "ES2022",
+      "noImplicitAny": true,
+      "moduleResolution": "node",
+      "sourceMap": true,
+      "outDir": "dist",
+      "removeComments": true,
+      "baseUrl": ".",
+      "paths": {
+          "*": [
+              "node_modules/*",
+          ]
+      }
+  },
+  "include": [
+      "src/*"
+  ]
 }

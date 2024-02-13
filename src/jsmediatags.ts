@@ -7,6 +7,7 @@ import ID3v1TagReader from "./ID3v1TagReader";
 import ID3v2TagReader from "./ID3v2TagReader";
 import MP4TagReader from "./MP4TagReader";
 import FLACTagReader from "./FLACTagReader";
+import NodeFileReader from './NodeFileReader';
 
 import type { CallbackType, LoadCallbackType, ByteRange } from "./FlowTypes";
 
@@ -269,3 +270,11 @@ Config.addFileReader(XhrFileReader)
   .addTagReader(ID3v1TagReader)
   .addTagReader(MP4TagReader)
   .addTagReader(FLACTagReader);
+
+  if (typeof process !== "undefined" && !process.browser) {
+    if (typeof navigator !== "undefined" && navigator.product === "ReactNative") {
+      throw new Error('ReactNative not supported');
+    } else {
+      Config.addFileReader(NodeFileReader);
+    }
+  }
