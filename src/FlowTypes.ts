@@ -48,6 +48,7 @@ export type TagFrames = {[key: string]: TagFrame};
 export type TagFrame = {
   id: string,
   size: number,
+  start: number,
   description: string,
   data: any
 };

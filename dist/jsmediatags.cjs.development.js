@@ -1590,6 +1590,7 @@ var MP4TagReader = /*#__PURE__*/function (_MediaTagReader) {
     return {
       id: atomName,
       size: atomSize,
+      start: offset,
       description: ATOM_DESCRIPTIONS[atomName] || "Unknown",
       data: atomData
     };
@@ -1627,6 +1628,7 @@ var MP4TagReader = /*#__PURE__*/function (_MediaTagReader) {
           return {
             id: parentAtomName,
             size: atomSize,
+            start: offset,
             description: description,
             data: atomData
           };

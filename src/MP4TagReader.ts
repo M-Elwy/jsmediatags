@@ -52,7 +52,7 @@ class MP4TagReader extends MediaTagReader {
     var self = this;
     // Load the header of the first atom
     mediaFileReader.loadRange([0, 16], {
-      onSuccess: function() {
+      onSuccess: function () {
         self._loadAtom(mediaFileReader, 0, "", callbacks);
       },
       onError: callbacks.onError
@@ -87,21 +87,21 @@ class MP4TagReader extends MediaTagReader {
         // The "meta" atom breaks convention and is a container with data.
         offset += 4; // next_item_id (uint32)
       }
-      var atomFullName = (parentAtomFullName ? parentAtomFullName+"." : "") + atomName;
+      var atomFullName = (parentAtomFullName ? parentAtomFullName + "." : "") + atomName;
       if (atomFullName === "moov.udta.meta.ilst") {
         mediaFileReader.loadRange([offset, offset + atomSize], callbacks);
       } else {
-        mediaFileReader.loadRange([offset+8, offset+8 + 8], {
-          onSuccess: function() {
+        mediaFileReader.loadRange([offset + 8, offset + 8 + 8], {
+          onSuccess: function () {
             self._loadAtom(mediaFileReader, offset + 8, atomFullName, callbacks);
           },
           onError: callbacks.onError
         });
       }
     } else {
-      mediaFileReader.loadRange([offset+atomSize, offset+atomSize + 8], {
-        onSuccess: function() {
-          self._loadAtom(mediaFileReader, offset+atomSize, parentAtomFullName, callbacks);
+      mediaFileReader.loadRange([offset + atomSize, offset + atomSize + 8], {
+        onSuccess: function () {
+          self._loadAtom(mediaFileReader, offset + atomSize, parentAtomFullName, callbacks);
         },
         onError: callbacks.onError
       });
@@ -148,7 +148,7 @@ class MP4TagReader extends MediaTagReader {
     data: MediaFileReader,
     offset: number,
     length: number,
-    tagsToRead:Array<string>,
+    tagsToRead: Array<string>,
     parentAtomFullName?: string,
     indent?: string
   ) {
@@ -167,7 +167,7 @@ class MP4TagReader extends MediaTagReader {
         if (atomName == "meta") {
           seek += 4; // next_item_id (uint32)
         }
-        var atomFullName = (parentAtomFullName ? parentAtomFullName+"." : "") + atomName;
+        var atomFullName = (parentAtomFullName ? parentAtomFullName + "." : "") + atomName;
         this._readAtom(tags, data, seek + 8, atomSize - 8, tagsToRead, atomFullName, indent);
         return;
       }
@@ -178,16 +178,13 @@ class MP4TagReader extends MediaTagReader {
         parentAtomFullName === "moov.udta.meta.ilst" &&
         this._canReadAtom(atomName)
       ) {
-        if(atomName === '----')
-          {
-            let atomData = this._readMeanMetadataAtom(data, seek);
-            tags[atomData.id] = atomData;
-          }
-          else
-          {
-            tags[atomName] = this._readMetadataAtom(data, seek);
-          }
-        
+        if (atomName === '----') {
+          let atomData = this._readMeanMetadataAtom(data, seek);
+          tags[atomData.id] = atomData;
+        }
+        else {
+          tags[atomName] = this._readMetadataAtom(data, seek);
+        }
       }
 
       seek += atomSize;
@@ -232,47 +229,48 @@ class MP4TagReader extends MediaTagReader {
 
       switch (type) {
         case "text":
-        atomData = data.getStringWithCharsetAt(dataStart, dataLength, "utf-8").toString();
-        break;
+          atomData = data.getStringWithCharsetAt(dataStart, dataLength, "utf-8").toString();
+          break;
 
         case "uint8":
-        atomData = data.getShortAt(dataStart, false);
-        break;
-        
+          atomData = data.getShortAt(dataStart, false);
+          break;
+
         case "int":
         case "uint":
-        // Though the QuickTime spec doesn't state it, there are 64-bit values
-        // such as plID (Playlist/Collection ID). With its single 64-bit floating
-        // point number type, these are hard to parse and pass in JavaScript.
-        // The high word of plID seems to always be zero, so, as this is the
-        // only current 64-bit atom handled, it is parsed from its 32-bit
-        // low word as an unsigned long.
-        //
-        var intReader = type == 'int'
-                          ? ( dataLength == 1 ? data.getSByteAt :
-                              dataLength == 2 ? data.getSShortAt :
-                              dataLength == 4 ? data.getSLongAt :
-                                                data.getLongAt)
-                          : ( dataLength == 1 ? data.getByteAt :
-                              dataLength == 2 ? data.getShortAt :
-                                                data.getLongAt);
-        // $FlowFixMe - getByteAt doesn't receive a second argument
-        atomData = intReader.call(data, dataStart + (dataLength == 8 ? 4 : 0), true);
-        break;
+          // Though the QuickTime spec doesn't state it, there are 64-bit values
+          // such as plID (Playlist/Collection ID). With its single 64-bit floating
+          // point number type, these are hard to parse and pass in JavaScript.
+          // The high word of plID seems to always be zero, so, as this is the
+          // only current 64-bit atom handled, it is parsed from its 32-bit
+          // low word as an unsigned long.
+          //
+          var intReader = type == 'int'
+            ? (dataLength == 1 ? data.getSByteAt :
+              dataLength == 2 ? data.getSShortAt :
+                dataLength == 4 ? data.getSLongAt :
+                  data.getLongAt)
+            : (dataLength == 1 ? data.getByteAt :
+              dataLength == 2 ? data.getShortAt :
+                data.getLongAt);
+          // $FlowFixMe - getByteAt doesn't receive a second argument
+          atomData = intReader.call(data, dataStart + (dataLength == 8 ? 4 : 0), true);
+          break;
 
         case "jpeg":
         case "png":
-        atomData = {
-          "format": "image/" + type,
-          "data": data.getBytesAt(dataStart, dataLength)
-        };
-        break;
+          atomData = {
+            "format": "image/" + type,
+            "data": data.getBytesAt(dataStart, dataLength)
+          };
+          break;
       }
     }
 
     return {
       id: atomName,
       size: atomSize,
+      start: offset,
       description: ATOM_DESCRIPTIONS[atomName] || "Unknown",
       data: atomData
     };
@@ -286,21 +284,19 @@ class MP4TagReader extends MediaTagReader {
     var atomSize = data.getLongAt(offset, true);
     var atomName = data.getStringAt(offset + 4, 4);
     let description = '';
-    var klass = data.getInteger24At(offset + METADATA_HEADER + 1, true);
+    let klass = data.getInteger24At(offset + METADATA_HEADER + 1, true);
     var type = TYPES[klass];
     var atomData;
     var bigEndian = true;
 
-    if(atomName == "----")
-    {
+    if (atomName == "----") {
       let parentAtomName = atomName;
       let atomOffset = offset + 8;
       atomSize = data.getLongAt(atomOffset, true);
       atomName = data.getStringAt(atomOffset + 4, 4);
       parentAtomName += '/' + atomName;
 
-      if(atomName === "mean")
-      {
+      if (atomName === "mean") {
         atomOffset += 8;
         atomName = data.getStringAt(atomOffset + 4, atomSize - 12); // com.apple.iTunes | com.serato.dj
         //console.log('atomSize', atomSize);
@@ -313,8 +309,7 @@ class MP4TagReader extends MediaTagReader {
         //console.log('atomSize', atomSize);
         //console.log('atomName', atomName);
 
-        if(atomName === "name")
-        {
+        if (atomName === "name") {
           //atomOffset += 8;
           atomName = data.getStringAt(atomOffset + 12, atomSize - 12); // 'markersv2'
           parentAtomName += '/' + atomName;
@@ -327,7 +322,6 @@ class MP4TagReader extends MediaTagReader {
           atomName = data.getStringAt(atomOffset + 4, 4); // 'data'
           //console.log('atomSize', atomSize);
           //console.log('atomName', atomName);
-          
           var dataStart = atomOffset + METADATA_HEADER;
           var dataLength = atomSize - METADATA_HEADER;
           //console.log('atomOffset', atomOffset, 'atomSize', atomSize, 'dataStart', dataStart, 'dataLength', dataLength);
@@ -335,6 +329,7 @@ class MP4TagReader extends MediaTagReader {
           return {
             id: parentAtomName,
             size: atomSize,
+            start: offset,
             description: description,
             data: atomData
           };
@@ -343,7 +338,7 @@ class MP4TagReader extends MediaTagReader {
     }
   }
 
-  getShortcuts(): {[key: string]: string|Array<string>} {
+  getShortcuts(): { [key: string]: string | Array<string> } {
     return SHORTCUTS;
   }
 }
@@ -416,15 +411,15 @@ const UNSUPPORTED_ATOMS = {
 };
 
 const SHORTCUTS = {
-  "title"     : "©nam",
-  "artist"    : "©ART",
-  "album"     : "©alb",
-  "year"      : "©day",
-  "comment"   : "©cmt",
-  "track"     : "trkn",
-  "genre"     : "©gen",
-  "picture"   : "covr",
-  "lyrics"    : "©lyr"
+  "title": "©nam",
+  "artist": "©ART",
+  "album": "©alb",
+  "year": "©day",
+  "comment": "©cmt",
+  "track": "trkn",
+  "genre": "©gen",
+  "picture": "covr",
+  "lyrics": "©lyr"
 };
 
 export default MP4TagReader;
